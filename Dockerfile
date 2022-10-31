@@ -15,8 +15,7 @@ FROM node:18-alpine as production
 WORKDIR /usr/src/app
 
 COPY --from=development /usr/src/app/build ./build
-# SSR
+# # SSR
 COPY --from=development /usr/src/app/public ./public
-COPY --from=development /usr/src/app/views ./views
 
 CMD ["node", "build/index"]
