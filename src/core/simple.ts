@@ -2,13 +2,14 @@ import * as http from 'http'
 import { validateMiddleware } from '../utils/middleware.validate'
 import { Middleware, Handler } from './types/common.type'
 import { Request, request } from './request'
-import { Response, response } from './response'
 import { matchPath } from '../utils/matcher'
 import { ErrorMessage } from '../shared/enums/error-message.enum'
+import { Response, response } from './response'
 
 export default class Simple {
   // Basic Middleware Pattern in JavaScript
   // https://muniftanjim.dev/blog/basic-middleware-pattern-in-javascript/
+  // https://www.devtools.tech/resources/s/build-your-own-expressjs-or-part-2---rid---negw30VulwpaVLRpxxMl
   private readonly middlewares: Middleware[] = []
 
   use(route: string | null, middleware: Handler) {
@@ -28,20 +29,15 @@ export default class Simple {
 
   handle(req: Request, res: Response) {
     /* Will do middleware handling here*/
-    const next = this.findNext(req, res)
-    // запуск раннера по всем миддлверам
-    next()
+    this.execute(req, res)
   }
 
-  listen(port = 8080, cb: any) {
+  listen(port = 8080, cb: unknown) {
     return http
       .createServer((req, res) => {
-        // const extendedRequest = request(req)
-        // const extendedResponse = response(res)
-        // this.handle(extendedRequest, extendedResponse)
-        res.writeHead(200, { 'Content-Type': 'text/html' })
-        res.write('Hello world')
-        res.end()
+        const extendedRequest = request(req)
+        const extendedResponse = response(res)
+        this.handle(extendedRequest, extendedResponse)
       })
       .listen({ port }, () => {
         if (cb) {
@@ -53,30 +49,33 @@ export default class Simple {
       })
   }
 
-  findNext(req: Request, res: Response) {
-    let current = -1
-    const next = () => {
-      current += 1
-      const middleware = this.middlewares[current]
+  async execute(req: Request, res: Response) {
+    let prevIndex = -1
+    const runner = async (index: number): Promise<void> => {
+      if (index === prevIndex) {
+        throw new Error('next() called multiple times')
+      }
 
-      if (!req.pathname) {
+      if (!req.parsedUrl.pathname) {
         throw new Error(ErrorMessage.PATH_TO_BE_STRING)
       }
 
+      prevIndex = index
+      const middleware = this.middlewares[prevIndex]
+
       const { matched = false, params = {} } = middleware
-        ? matchPath(middleware.path, req.pathname)
+        ? matchPath(middleware.path, req.parsedUrl.pathname)
         : {}
 
       if (matched) {
         req.params = params
-        middleware.handler(req, res, next)
-        // если нет совпадений по маршруту
-        // и счетчик меньше или равно длине массива с мидлварами
-        // то вызови следующий мидлвар
-      } else if (current <= this.middlewares.length) {
-        next()
+        middleware.handler(req, res, () => {
+          return runner(index + 1)
+        })
+      } else if (prevIndex <= this.middlewares.length) {
+        runner(index + 1)
       }
     }
-    return next
+    await runner(0)
   }
 }
