@@ -35,6 +35,10 @@ export default class Simple {
   listen(port = 8080, cb: unknown) {
     return http
       .createServer((req, res) => {
+        console.log(req.url)
+        console.log('*** headers ***')
+        console.log(req.headers)
+
         const extendedRequest = request(req)
         const extendedResponse = response(res)
         this.handle(extendedRequest, extendedResponse)

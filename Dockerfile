@@ -5,7 +5,6 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 RUN npm install
-RUN npm i dotenv
 
 COPY . .
 
@@ -13,7 +12,7 @@ RUN npm run build
 
 FROM node:18-alpine as production
 
-ENV PORT=3000
+EXPOSE 3000
 
 WORKDIR /usr/src/app
 
