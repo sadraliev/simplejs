@@ -4,17 +4,21 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 const app = new Simple()
-app.use('/', (req, res) => {
-  console.log('res', res)
-  fs.readFile(path.resolve(__dirname, 'public', 'index.html'), (err, data) => {
-    res.setHeader('Content-Type', 'text/html')
+
+app.use('/', async (req, res, next) => {
+  fs.readFile(path.resolve(__dirname, '..', 'public', 'index.html'), (err, data) => {
     if (err) {
-      res.writeHead(500)
-      return res.end('Some error occured')
+      res.status(500).send('Error Occured')
+      return next()
     }
-    res.writeHead(200)
-    return res.end(data)
+    res.status(200).send(data)
+    return next()
   })
 })
 
-app.listen(config().PORT || 3000, () => console.log('Server running on port ' + config().PORT))
+app.use('/hello', (req, res, next) => {
+  res.status(404).send('World!')
+  next()
+})
+
+app.listen(config().PORT, () => console.log('Server running on port ' + config().PORT))
