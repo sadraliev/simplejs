@@ -9,6 +9,7 @@ export interface Response extends http.ServerResponse {
 }
 
 export function response(res: ServerResponse): Response {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   const response: Response = res
   function end(content: Buffer | string | Record<string, string>): Response {

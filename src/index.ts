@@ -21,4 +21,9 @@ app.use('/hello', (req, res, next) => {
   next()
 })
 
+app.use('*', (req, res, next) => {
+  res.status(200).end()
+  next()
+})
+
 app.listen(config().PORT, () => console.log('Server running on port ' + config().PORT))
